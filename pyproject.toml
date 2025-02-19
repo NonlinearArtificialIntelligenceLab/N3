@@ -12,6 +12,7 @@ dependencies = [
     "optax>=0.2.3",
     "scikit-learn>=1.5.2",
     "scipy>=1.14.1",
+    "wandb>=0.19.6",
 ]
 
 [project.optional-dependencies]

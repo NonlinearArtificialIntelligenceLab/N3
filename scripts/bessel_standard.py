@@ -17,6 +17,7 @@ from n3.architecture.controller import StandardController, ControllerLike
 from n3.architecture.model import N3, ModelLike
 from n3.data import bessel
 from n3.utils.utils import grad_norm
+from n3.utils.wandb import WandbLogger
 
 
 def argument_parser():
@@ -58,6 +59,8 @@ def argument_parser():
         default="INFO",
         help="Set the logging verbosity",
     )
+    parser.add_argument("--wandb", action="store_true",
+                    help="Enable Weights & Biases logging")
     parser.add_argument("--console", action="store_true", help="Log to console")
     return parser
 
@@ -123,15 +126,21 @@ def main():
 
     os.makedirs(args.out_path, exist_ok=True)
 
-    logging.basicConfig(
-        level=getattr(logging, args.verbosity),
-        filename=f"{args.out_path}info.log",
-        filemode="w",
+    logger = WandbLogger(
+        project="growing-nets-regression",
+        config=vars(args),
+        enable=args.wandb
     )
-    logger = logging.getLogger(__name__)
-    if args.console:
-        console_handler = logging.StreamHandler(sys.stdout)
-        logger.addHandler(console_handler)
+    # else:
+    #     logging.basicConfig(
+    #         level=getattr(logging, args.verbosity),
+    #         filename=f"{args.out_path}info.log",
+    #         filemode="w",
+    #     )
+    #     logger = logging.getLogger(__name__)
+    #     if args.console:
+    #         console_handler = logging.StreamHandler(sys.stdout)
+    #         logger.addHandler(console_handler)
 
     # Dataset
     x_train, x_test, y_train, y_test = bessel.generate_data(
@@ -173,10 +182,18 @@ def main():
                     eqx.filter_grad(compute_size_loss)(control, args.size_influence)
                 )
             )
-            logger.info(
-                f"epoch: {epoch_list[-1]}, train_loss: {train_losses[-1]:.4e}, test_loss: {test_losses[-1]:.4e} control: {controls[-1]:.4e}"
-            )
-            logger.info(f"Control_grad_norm: {control_grad_norms[-1]:.4e}")
+            # logger.info(
+            #     f"epoch: {epoch_list[-1]}, train_loss: {train_losses[-1]:.4e}, test_loss: {test_losses[-1]:.4e} control: {controls[-1]:.4e}"
+            # )
+            # logger.info(f"Control_grad_norm: {control_grad_norms[-1]:.4e}")
+
+            metrics = {
+                "train/loss": float(train_loss),
+                "test/loss": float(test_loss),
+                "network/size": control.params.item() ** 2,
+                "learning/control_grad_norm": float(control_grad_norms[-1])
+            }
+            logger.log_metrics(metrics, epoch)
 
     # Save metrics
     np.savetxt(f"{args.out_path}epochs.txt", epoch_list)
