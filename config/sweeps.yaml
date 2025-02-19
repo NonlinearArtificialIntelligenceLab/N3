@@ -1,0 +1,19 @@
+bessel_regression:
+  method: grid
+  parameters:
+    N_max:
+      values: [64, 128, 256, 512, 1024]
+    n_samples:
+      values: [1000, 10000, 100000]
+    learning_rate:
+      values: [1e-4, 3e-4, 1e-3]
+
+spiral_classification:
+  method: grid
+  parameters:
+    num_classes:
+      values: [3, 5, 7, 9]
+    N_MAX:
+      values: [128, 256, 512]
+    batch_size:
+      values: [64, 128, 256]

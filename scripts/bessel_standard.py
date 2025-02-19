@@ -40,7 +40,7 @@ def argument_parser():
         "--N_max", type=int, default=10, help="Per layer max number of neurons"
     )
     parser.add_argument(
-        "--size_influence", type=float, default=0.32, help="Influence of size loss"
+        "--size_influence", type=float, default=0.32, help="Influence of size loss (ignored for adaptive optimizers)"
     )
     parser.add_argument(
         "--epochs", type=int, default=5_000, help="Number of epochs to train for"
@@ -49,7 +49,7 @@ def argument_parser():
         "--learning_rate", type=float, default=1e-3, help="Learning rate for optimizer"
     )
     parser.add_argument(
-        "--out_path", type=str, default="../output/test/", help="Path to save metrics"
+        "--out_path", type=str, default="./output/test/", help="Path to save metrics"
     )
     parser.add_argument("--log_every", type=int, default=100, help="log every n epochs")
     parser.add_argument(
@@ -61,6 +61,8 @@ def argument_parser():
     )
     parser.add_argument("--wandb", action="store_true",
                     help="Enable Weights & Biases logging")
+    parser.add_argument("--group", type=str, default=None,
+                    help="W&B experiment group name")
     parser.add_argument("--console", action="store_true", help="Log to console")
     return parser
 
@@ -129,7 +131,8 @@ def main():
     logger = WandbLogger(
         project="growing-nets-regression",
         config=vars(args),
-        enable=args.wandb
+        enable=args.wandb,
+        group=args.group
     )
     # else:
     #     logging.basicConfig(
