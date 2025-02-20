@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import sys
+import json
 
 import numpy as np
 import jax
@@ -17,12 +18,18 @@ from n3.architecture.controller import StandardController, ControllerLike
 from n3.architecture.model import N3, ModelLike
 from n3.data import bessel
 from n3.utils.utils import grad_norm
+from n3.utils.wandb import WandbLogger
+from n3.utils.path_manager import build_output_path
 
 
 def argument_parser():
     parser = argparse.ArgumentParser(
         description="Runner for N3 regression on Bessel function dataset."
     )
+    parser.add_argument("--num_runs", type=int, default=1,
+                    help="Number of independent runs to average over")
+    parser.add_argument("--base_seed", type=int, default=0,
+                    help="Base seed for random number generation")
     parser.add_argument(
         "--n_samples", type=int, default=2**15, help="Number of samples to generate"
     )
@@ -33,13 +40,10 @@ def argument_parser():
         help="Fraction of samples to use for testing",
     )
     parser.add_argument(
-        "--seed", type=int, default=0, help="Seed for random number generator"
-    )
-    parser.add_argument(
         "--N_max", type=int, default=10, help="Per layer max number of neurons"
     )
     parser.add_argument(
-        "--size_influence", type=float, default=0.32, help="Influence of size loss"
+        "--size_influence", type=float, default=0.32, help="Influence of size loss (ignored for adaptive optimizers)"
     )
     parser.add_argument(
         "--epochs", type=int, default=5_000, help="Number of epochs to train for"
@@ -48,8 +52,12 @@ def argument_parser():
         "--learning_rate", type=float, default=1e-3, help="Learning rate for optimizer"
     )
     parser.add_argument(
-        "--out_path", type=str, default="../output/test/", help="Path to save metrics"
+        "--out_path", type=str, default=None, help="Path to save metrics"
     )
+    parser.add_argument("--out_root", type=str, default="./output",
+                    help="Root directory for all outputs")
+    parser.add_argument("--exp_name", type=str, default="default",
+                    help="Experiment name for organizing results")
     parser.add_argument("--log_every", type=int, default=100, help="log every n epochs")
     parser.add_argument(
         "--verbosity",
@@ -58,6 +66,10 @@ def argument_parser():
         default="INFO",
         help="Set the logging verbosity",
     )
+    parser.add_argument("--wandb", action="store_true",
+                    help="Enable Weights & Biases logging")
+    parser.add_argument("--group", type=str, default=None,
+                    help="W&B experiment group name")
     parser.add_argument("--console", action="store_true", help="Log to console")
     return parser
 
@@ -121,17 +133,46 @@ def main():
     parser = argument_parser()
     args = parser.parse_args()
 
-    os.makedirs(args.out_path, exist_ok=True)
+    args_dict = vars(args)
+    args_dict['script'] = os.path.basename(__file__)
 
-    logging.basicConfig(
-        level=getattr(logging, args.verbosity),
-        filename=f"{args.out_path}info.log",
-        filemode="w",
+    output_path = build_output_path(args_dict)
+
+    if args.out_path:  # If using legacy out_path
+        output_path = args.out_path
+    else:
+        output_path = build_output_path(args_dict)
+
+    os.makedirs(output_path, exist_ok=True)
+
+    with open(os.path.join(output_path, "config.json"), "w") as f:
+        json.dump(args_dict, f)
+
+    path_components = {
+        'hidden_size': args.N_max,
+        'dataset_size': args.n_samples,
+        'learning_rate': args.learning_rate,
+        'task_type': 'regression' if 'bessel' in __file__ else 'classification'
+    }
+
+    # Initialize logger
+    logger = WandbLogger(
+        project="growing-nets",
+        exp_name=args.exp_name,
+        path_components=path_components,
+        config=vars(args),
+        enable=args.wandb
     )
-    logger = logging.getLogger(__name__)
-    if args.console:
-        console_handler = logging.StreamHandler(sys.stdout)
-        logger.addHandler(console_handler)
+
+    # logging.basicConfig(
+    #     level=getattr(logging, args.verbosity),
+    #     filename=f"{output_path}/info.log",
+    #     filemode="w",
+    # )
+    # logger = logging.getLogger(__name__)
+    # if args.console:
+    #     console_handler = logging.StreamHandler(sys.stdout)
+    #     logger.addHandler(console_handler)
 
     # Dataset
     x_train, x_test, y_train, y_test = bessel.generate_data(
@@ -173,17 +214,25 @@ def main():
                     eqx.filter_grad(compute_size_loss)(control, args.size_influence)
                 )
             )
-            logger.info(
-                f"epoch: {epoch_list[-1]}, train_loss: {train_losses[-1]:.4e}, test_loss: {test_losses[-1]:.4e} control: {controls[-1]:.4e}"
-            )
-            logger.info(f"Control_grad_norm: {control_grad_norms[-1]:.4e}")
+            # logger.info(
+            #     f"epoch: {epoch_list[-1]}, train_loss: {train_losses[-1]:.4e}, test_loss: {test_losses[-1]:.4e} control: {controls[-1]:.4e}"
+            # )
+            # logger.info(f"Control_grad_norm: {control_grad_norms[-1]:.4e}")
+
+            metrics = {
+                "train/loss": float(train_loss),
+                "test/loss": float(test_loss),
+                "network/size": control.params.item() ** 2,
+                "learning/control_grad_norm": float(control_grad_norms[-1])
+            }
+            logger.log_metrics(metrics, epoch)
 
     # Save metrics
-    np.savetxt(f"{args.out_path}epochs.txt", epoch_list)
-    np.savetxt(f"{args.out_path}test_losses.txt", test_losses)
-    np.savetxt(f"{args.out_path}train_losses.txt", train_losses)
-    np.savetxt(f"{args.out_path}controls.txt", controls)
-    np.savetxt(f"{args.out_path}control_grad_norms.txt", control_grad_norms)
+    np.savetxt(f"{output_path}/epochs.txt", epoch_list)
+    np.savetxt(f"{output_path}/test_losses.txt", test_losses)
+    np.savetxt(f"{output_path}/train_losses.txt", train_losses)
+    np.savetxt(f"{output_path}/controls.txt", controls)
+    np.savetxt(f"{output_path}/control_grad_norms.txt", control_grad_norms)
 
 
 if __name__ == "__main__":

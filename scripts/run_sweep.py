@@ -23,10 +23,12 @@ def run_sweep(sweep_name, max_parallel=4):
     for i, params in enumerate(commands):
         # Build command string
         cmd = [
-            "python", "scripts/bessel_standard.py" if "regression" in sweep_name
-                else "scripts/spiral_standard.py",
+            "python", "benchmarking/bessel_standard.py" if "regression" in sweep_name
+                else "benchmarking/spiral_standard.py",
             "--wandb",
-            f"--group={sweep_name}"
+            f"--group={sweep_name}",
+            f"--exp_name={sweep_name}",
+            f"--epochs={config['epochs']}"
         ]
         for k, v in params.items():
             cmd.append(f"--{k}={v}")

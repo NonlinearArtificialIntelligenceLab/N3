@@ -10,16 +10,44 @@ class WandbLogger:
     @beartype
     def __init__(self,
                 project: str = "growing-networks",
-                group: Optional[str] = None,
+                exp_name: str = "default",
+                path_components: Dict[str, Any] = {},
                 config: Optional[Dict[str, Any]] = None,
                 enable: bool = True):
-        self.enabled = enable
-        if self.enabled:
-            self.run = wandb.init(
-                project=project,
-                group=group,
-                config=config,
-            )
+        if not enable:
+            self.enabled = False
+            return
+
+        self.enabled = True
+        run_name = self._generate_run_name(exp_name, path_components)
+        tags = self._generate_tags(path_components)
+
+        self.run = wandb.init(
+            project=project,
+            name=run_name,
+            group=exp_name,
+            tags=tags,
+            config=config,
+        )
+
+    def _generate_run_name(self, exp_name: str,
+                        components: Dict[str, Any]) -> str:
+        """Create human-readable run name"""
+        params = [
+            f"{k[:3]}={v}"
+            for k, v in components.items()
+            if k in ['hidden_size', 'dataset_size', 'learning_rate']
+        ]
+        return f"{exp_name}_{'_'.join(params)}"
+
+    def _generate_tags(self, components: Dict[str, Any]) -> list[str]:
+        """Create searchable tags from parameters"""
+        return [
+            f"hs-{components.get('hidden_size', '')}",
+            f"ds-{components.get('dataset_size', '')}",
+            f"lr-{components.get('learning_rate', '')}",
+            components.get('task_type', 'unknown')
+        ]
 
     @beartype
     def watch_model(self,

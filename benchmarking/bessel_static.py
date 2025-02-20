@@ -13,7 +13,7 @@ from sklearn.preprocessing import MinMaxScaler
 from jaxtyping import Float, Array
 
 
-from n3.architecture.controller import StandardController, ControllerLike
+from n3.architecture.controller import IdentityController, ControllerLike
 from n3.architecture.model import N3, ModelLike
 from n3.data import bessel
 from n3.utils.utils import grad_norm
@@ -144,7 +144,7 @@ def main():
     # Model and Controller
     model_key, control_key = jax.random.split(jax.random.PRNGKey(args.seed))
     n3 = N3(1, 1, [args.N_max], model_key)
-    control = StandardController(1, control_key)  # this line defines the growing nature
+    control = IdentityController(1, control_key)  # this line defines the static nature
 
     optim = optax.adam(learning_rate=args.learning_rate)
     opt_state = optim.init(eqx.filter([n3, control], eqx.is_inexact_array))
@@ -167,14 +167,14 @@ def main():
 
             test_losses.append(test_loss)
             train_losses.append(train_loss)
-            controls.append(control.params.item())
+            controls.append(control.params.item() ** 2)
             control_grad_norms.append(
                 grad_norm(
                     eqx.filter_grad(compute_size_loss)(control, args.size_influence)
                 )
             )
             logger.info(
-                f"epoch: {epoch_list[-1]}, train_loss: {train_losses[-1]:.4e}, test_loss: {test_losses[-1]:.4e} control: {controls[-1]:.4e}"
+                f"epoch: {epoch_list[-1]}, train_loss: {train_losses[-1]:.4e}, test_loss: {test_losses[-1]:.4e} control2: {controls[-1]:.4e}"
             )
             logger.info(f"Control_grad_norm: {control_grad_norms[-1]:.4e}")
 
