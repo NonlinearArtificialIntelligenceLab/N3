@@ -21,9 +21,9 @@ def get_script_path(sweep_name):
             return "benchmarking/bessel_standard.py"
         case "spiral_classification":
             return "benchmarking/spiral_standard.py"
-        case "bessel_baseline":
+        case "bessel_regression_baseline":
             return "benchmarking/bessel_static.py"
-        case "spiral_baseline":
+        case "spiral_classification_baseline":
             return "benchmarking/spiral_static.py"
         case _:
             raise ValueError(f"Unknown sweep name: {sweep_name}")
@@ -67,7 +67,7 @@ def run_sweep(sweep_name, max_parallel=4):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("sweep_name", choices=["bessel_regression", "spiral_classification"])
+    parser.add_argument("sweep_name", choices=["bessel_regression", "spiral_classification", "bessel_regression_baseline", "spiral_classification_baseline"])
     parser.add_argument("--max_parallel", type=int, default=4)
     args = parser.parse_args()
 

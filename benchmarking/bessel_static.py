@@ -209,6 +209,8 @@ def main():
         np.savetxt(f"{output_path}/controls.txt", controls)
         np.savetxt(f"{output_path}/control_grad_norms.txt", control_grad_norms)
 
+        del logger
+
 
 if __name__ == "__main__":
     main()
