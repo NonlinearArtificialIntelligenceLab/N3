@@ -1,5 +1,7 @@
 bessel_regression:
   epochs: 20000
+  num_runs: 10
+  base_seed: 0
   method: grid
   parameters:
     N_max:

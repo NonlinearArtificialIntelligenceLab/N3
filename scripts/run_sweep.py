@@ -28,7 +28,9 @@ def run_sweep(sweep_name, max_parallel=4):
             "--wandb",
             f"--group={sweep_name}",
             f"--exp_name={sweep_name}",
-            f"--epochs={config['epochs']}"
+            f"--epochs={config['epochs']}",
+            f"--num_runs={config['num_runs']}",
+            f"--base_seed={config['base_seed']}",
         ]
         for k, v in params.items():
             cmd.append(f"--{k}={v}")

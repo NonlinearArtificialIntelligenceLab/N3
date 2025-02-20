@@ -1,7 +1,7 @@
 import os
 from typing import Dict, Any
 
-def build_output_path(args: Dict[str, Any], run_idx: int = 0) -> str:
+def build_output_path(args: Dict[str, Any]) -> str:
     """Construct structured output path based on parameters"""
     task_type = "regression" if "bessel" in args['script'] else "classification"
 
@@ -12,12 +12,12 @@ def build_output_path(args: Dict[str, Any], run_idx: int = 0) -> str:
         'lr': args.get('learning_rate', 1e-3),
         'task': task_type,
         'exp_name': args.get('exp_name', 'default'),
-        'run_idx': run_idx,
-        'seed': args['base_seed'] + run_idx
+        'run_idx': args['run_idx'],
+        'seed': args['seed']
     }
 
     # Create path components
-    path_components = [f"run_{run_idx}",
+    path_components = [f"run_{path_params['run_idx']}"
         f"seed_{path_params['seed']}"] + [
         f"{k}={v}" for k, v in path_params.items()
         if k not in ['exp_name']

@@ -126,89 +126,93 @@ def main():
     args_dict = vars(args)
     args_dict['script'] = os.path.basename(__file__)
 
-    output_path = build_output_path(args_dict)
+    for run_idx in range(args.num_runs):
+        args_dict['run_idx'] = run_idx
+        args.seed = args.base_seed + run_idx
+        args_dict['seed'] = args.base_seed + run_idx
 
-    if args.out_path:  # If using legacy out_path
-        output_path = args.out_path
-    else:
         output_path = build_output_path(args_dict)
 
-    os.makedirs(output_path, exist_ok=True)
+        os.makedirs(output_path, exist_ok=True)
 
-    with open(os.path.join(output_path, "config.json"), "w") as f:
-        json.dump(args_dict, f)
+        with open(os.path.join(output_path, "config.json"), "w") as f:
+            json.dump(args_dict, f)
 
-    path_components = {
-        'hidden_size': args.N_max,
-        'dataset_size': args.n_samples,
-        'learning_rate': args.learning_rate,
-        'task_type': 'regression' if 'bessel' in __file__ else 'classification'
-    }
+        path_components = {
+            'hidden_size': args.N_max,
+            'dataset_size': args.n_samples,
+            'learning_rate': args.learning_rate,
+            'task_type': 'regression' if 'bessel' in __file__ else 'classification',
+            'run_idx': run_idx,
+            'seed': args_dict['seed']
+        }
 
-    # Initialize logger
-    logger = WandbLogger(
-        project="growing-nets",
-        exp_name=args.exp_name,
-        path_components=path_components,
-        config=vars(args),
-        enable=args.wandb
-    )
-
-    # Dataset
-    x_train, x_test, y_train, y_test = bessel.generate_data(
-        n_samples=args.n_samples,
-        test_size=args.test_size,
-        scaler=MinMaxScaler(feature_range=(-1, 1)),
-        seed=args.seed,
-    )
-
-    # Model and Controller
-    model_key, control_key = jax.random.split(jax.random.PRNGKey(args.seed))
-    n3 = N3(1, 1, [args.N_max], model_key)
-    control = StandardController(1, control_key)  # this line defines the growing nature
-
-    optim = optax.adam(learning_rate=args.learning_rate)
-    opt_state = optim.init(eqx.filter([n3, control], eqx.is_inexact_array))
-
-    # Training loop
-    epoch_list = []
-    test_losses = []
-    train_losses = []
-    controls = []
-    control_grad_norms = []
-
-    for epoch in range(args.epochs):
-        train_loss, n3, control, opt_state = make_step(
-            n3, control, args.size_influence, x_train, y_train, optim, opt_state
+        # Initialize logger
+        logger = WandbLogger(
+            project="growing-nets",
+            exp_name=args.exp_name,
+            path_components=path_components,
+            config=vars(args),
+            enable=args.wandb
         )
 
-        if epoch % args.log_every == 0:
-            epoch_list.append(epoch)
-            test_loss = test_step(n3, control, args.size_influence, x_test, y_test)
+        # Dataset
+        x_train, x_test, y_train, y_test = bessel.generate_data(
+            n_samples=args.n_samples,
+            test_size=args.test_size,
+            scaler=MinMaxScaler(feature_range=(-1, 1)),
+            seed=args.seed,
+        )
 
-            test_losses.append(test_loss)
-            train_losses.append(train_loss)
-            controls.append(control.params.item())
-            control_grad_norms.append(
-                grad_norm(
-                    eqx.filter_grad(compute_size_loss)(control, args.size_influence)
-                )
+        # Model and Controller
+        model_key, control_key = jax.random.split(jax.random.PRNGKey(args.seed))
+        n3 = N3(1, 1, [args.N_max], model_key)
+        control = StandardController(1, control_key)  # this line defines the growing nature
+
+        optim = optax.adam(learning_rate=args.learning_rate)
+        opt_state = optim.init(eqx.filter([n3, control], eqx.is_inexact_array))
+
+        # Training loop
+        epoch_list = []
+        test_losses = []
+        train_losses = []
+        controls = []
+        control_grad_norms = []
+
+        for epoch in range(args.epochs):
+            train_loss, n3, control, opt_state = make_step(
+                n3, control, args.size_influence, x_train, y_train, optim, opt_state
             )
 
-            metrics = {
-                "train/loss": float(train_loss),
-                "test/loss": float(test_loss),
-                "network/size": control.params.item() ** 2,
-                "learning/control_grad_norm": float(control_grad_norms[-1])
-            }
-            logger.log_metrics(metrics, epoch)
+            if epoch % args.log_every == 0:
+                epoch_list.append(epoch)
+                test_loss = test_step(n3, control, args.size_influence, x_test, y_test)
 
-    # Save metrics
-    np.savetxt(f"{output_path}/epochs.txt", epoch_list)
-    np.savetxt(f"{output_path}/test_losses.txt", test_losses)
-    np.savetxt(f"{output_path}/train_losses.txt", train_losses)
-    np.savetxt(f"{output_path}/controls.txt", controls)
-    np.savetxt(f"{output_path}/control_grad_norms.txt", control_grad_norms)
+                test_losses.append(test_loss)
+                train_losses.append(train_loss)
+                controls.append(control.params.item())
+                control_grad_norms.append(
+                    grad_norm(
+                        eqx.filter_grad(compute_size_loss)(control, args.size_influence)
+                    )
+                )
+
+                metrics = {
+                    "train/loss": float(train_loss),
+                    "test/loss": float(test_loss),
+                    "network/size": control.params.item() ** 2,
+                    "learning/control_grad_norm": float(control_grad_norms[-1])
+                }
+                logger.log_metrics(metrics, epoch)
+
+        # Save metrics
+        np.savetxt(f"{output_path}/epochs.txt", epoch_list)
+        np.savetxt(f"{output_path}/test_losses.txt", test_losses)
+        np.savetxt(f"{output_path}/train_losses.txt", train_losses)
+        np.savetxt(f"{output_path}/controls.txt", controls)
+        np.savetxt(f"{output_path}/control_grad_norms.txt", control_grad_norms)
+
+        del logger
 
 
 if __name__ == "__main__":
