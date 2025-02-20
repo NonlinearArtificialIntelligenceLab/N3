@@ -15,16 +15,29 @@ def generate_commands(config):
     values = [config['parameters'][k]['values'] for k in keys]
     return [dict(zip(keys, combo)) for combo in product(*values)]
 
+def get_script_path(sweep_name):
+    match sweep_name:
+        case "bessel_regression":
+            return "benchmarking/bessel_standard.py"
+        case "spiral_classification":
+            return "benchmarking/spiral_standard.py"
+        case "bessel_baseline":
+            return "benchmarking/bessel_static.py"
+        case "spiral_baseline":
+            return "benchmarking/spiral_static.py"
+        case _:
+            raise ValueError(f"Unknown sweep name: {sweep_name}")
+
 def run_sweep(sweep_name, max_parallel=4):
     config = load_sweep_config(sweep_name)
     commands = generate_commands(config)
-
+    script_path = get_script_path(sweep_name)
     processes = []
     for i, params in enumerate(commands):
         # Build command string
         cmd = [
-            "python", "benchmarking/bessel_standard.py" if "regression" in sweep_name
-                else "benchmarking/spiral_standard.py",
+            "python",
+            script_path,
             "--wandb",
             f"--group={sweep_name}",
             f"--exp_name={sweep_name}",

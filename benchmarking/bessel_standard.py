@@ -1,7 +1,5 @@
 import argparse
-import logging
 import os
-import sys
 import json
 
 import numpy as np
@@ -12,7 +10,6 @@ import optax
 from sklearn.preprocessing import MinMaxScaler
 
 from jaxtyping import Float, Array
-
 
 from n3.architecture.controller import StandardController, ControllerLike
 from n3.architecture.model import N3, ModelLike
@@ -60,7 +57,7 @@ def argument_parser():
                     help="Enable Weights & Biases logging")
     parser.add_argument("--group", type=str, default=None,
                     help="W&B experiment group name")
-    parser.add_argument("--console", action="store_true", help="Log to console")
+    # parser.add_argument("--console", action="store_true", help="Log to console")
     return parser
 
 

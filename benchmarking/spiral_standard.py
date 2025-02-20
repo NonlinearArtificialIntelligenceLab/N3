@@ -1,7 +1,5 @@
 import argparse
-import logging
 import os
-import sys
 import json
 
 import numpy as np
@@ -12,7 +10,6 @@ import optax
 from sklearn.preprocessing import MinMaxScaler
 
 from jaxtyping import Float, Array, Int
-
 
 from n3.architecture.controller import StandardController, ControllerLike
 from n3.architecture.model import N3, ModelLike
@@ -28,8 +25,6 @@ def argument_parser():
     )
     parser.add_argument("--num_runs", type=int, default=1,
                     help="Number of independent runs to average over")
-    parser.add_argument("--seed", type=int, default=0,
-                    help="Base seed for random number generation")
     parser.add_argument("--base_seed", type=int, default=0,
                     help="Base seed for random number generation")
     parser.add_argument(
@@ -56,26 +51,16 @@ def argument_parser():
     parser.add_argument(
         "--learning_rate", type=float, default=1e-3, help="Learning rate for optimizer"
     )
-    parser.add_argument(
-        "--out_path", type=str, default="../output/test/", help="Path to save metrics"
-    )
     parser.add_argument("--out_root", type=str, default="./output",
                     help="Root directory for all outputs")
     parser.add_argument("--exp_name", type=str, default="default",
                     help="Experiment name for organizing results")
     parser.add_argument("--log_every", type=int, default=100, help="log every n epochs")
-    parser.add_argument(
-        "--verbosity",
-        type=str,
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        default="INFO",
-        help="Set the logging verbosity",
-    )
     parser.add_argument("--wandb", action="store_true",
                     help="Enable Weights & Biases logging")
     parser.add_argument("--group", type=str, default=None,
                     help="W&B experiment group name")
-    parser.add_argument("--console", action="store_true", help="Log to console")
+    # parser.add_argument("--console", action="store_true", help="Log to console")
     return parser
 
 
@@ -142,112 +127,100 @@ def main():
     args_dict = vars(args)
     args_dict['script'] = os.path.basename(__file__)
 
-    output_path = build_output_path(args_dict)
+    for run_idx in range(args.num_runs):
+        args_dict['run_idx'] = run_idx
+        args.seed = args.base_seed + run_idx
+        args_dict['seed'] = args.base_seed + run_idx
 
-    if args.out_path:  # If using legacy out_path
-        output_path = args.out_path
-    else:
         output_path = build_output_path(args_dict)
 
-    os.makedirs(output_path, exist_ok=True)
+        os.makedirs(output_path, exist_ok=True)
 
-    with open(os.path.join(output_path, "config.json"), "w") as f:
-        json.dump(args_dict, f)
+        with open(os.path.join(output_path, "config.json"), "w") as f:
+            json.dump(args_dict, f)
 
-    path_components = {
-        'hidden_size': args.N_max,
-        'dataset_size': args.n_samples,
-        'learning_rate': args.learning_rate,
-        'task_type': 'regression' if 'bessel' in __file__ else 'classification'
-    }
+        path_components = {
+            'hidden_size': args.N_max,
+            'dataset_size': args.n_samples,
+            'learning_rate': args.learning_rate,
+            'task_type': 'regression' if 'bessel' in __file__ else 'classification',
+            'run_idx': run_idx,
+            'seed': args_dict['seed']
+        }
 
-    # Initialize logger
-    logger = WandbLogger(
-        project="growing-nets",
-        exp_name=args.exp_name,
-        path_components=path_components,
-        config=vars(args),
-        enable=args.wandb
-    )
-
-    # logging.basicConfig(
-    #     level=getattr(logging, args.verbosity),
-    #     filename=f"{args.out_path}info.log",
-    #     filemode="w",
-    # )
-    # logger = logging.getLogger(__name__)
-    # if args.console:
-    #     console_handler = logging.StreamHandler(sys.stdout)
-    #     logger.addHandler(console_handler)
-
-    # Dataset
-    x_train, x_test, y_train, y_test = spiral.generate_data(
-        n_samples=args.n_samples,
-        num_classes=args.n_classes,
-        test_size=args.test_size,
-        scaler=MinMaxScaler(feature_range=(-1, 1)),
-        seed=args.seed,
-    )
-
-    # Model and Controller
-    model_key, control_key = jax.random.split(jax.random.PRNGKey(args.seed))
-    n3 = N3(2, args.n_classes, [args.N_max], model_key)
-    control = StandardController(1, control_key)  # this line defines the growing nature
-
-    optim = optax.adam(learning_rate=args.learning_rate)
-    opt_state = optim.init(eqx.filter([n3, control], eqx.is_inexact_array))
-
-    # Training loop
-    epoch_list = []
-    test_losses = []
-    test_accuracies = []
-    train_losses = []
-    controls = []
-    control_grad_norms = []
-
-    for epoch in range(args.epochs):
-        train_loss, n3, control, opt_state = make_step(
-            n3, control, args.size_influence, x_train, y_train, optim, opt_state
+        # Initialize logger
+        logger = WandbLogger(
+            project="growing-nets",
+            exp_name=args.exp_name,
+            path_components=path_components,
+            config=vars(args),
+            enable=args.wandb
         )
 
-        if epoch % args.log_every == 0:
-            epoch_list.append(epoch)
-            test_loss = test_step(n3, control, args.size_influence, x_test, y_test)
-            test_accuracy = accuracy(n3, control, x_test, y_test)
-            test_losses.append(test_loss)
-            test_accuracies.append(test_accuracy)
-            train_losses.append(train_loss)
-            controls.append(control.params.item() ** 2)
-            control_grad_norms.append(
-                grad_norm(
-                    eqx.filter_grad(compute_size_loss)(control, args.size_influence)
-                )
+        # Dataset
+        x_train, x_test, y_train, y_test = spiral.generate_data(
+            n_samples=args.n_samples,
+            num_classes=args.n_classes,
+            test_size=args.test_size,
+            scaler=MinMaxScaler(feature_range=(-1, 1)),
+            seed=args.seed,
+        )
+
+        # Model and Controller
+        model_key, control_key = jax.random.split(jax.random.PRNGKey(args.seed))
+        n3 = N3(2, args.n_classes, [args.N_max], model_key)
+        control = StandardController(1, control_key)  # this line defines the growing nature
+
+        optim = optax.adam(learning_rate=args.learning_rate)
+        opt_state = optim.init(eqx.filter([n3, control], eqx.is_inexact_array))
+
+        # Training loop
+        epoch_list = []
+        test_losses = []
+        test_accuracies = []
+        train_losses = []
+        controls = []
+        control_grad_norms = []
+
+        for epoch in range(args.epochs):
+            train_loss, n3, control, opt_state = make_step(
+                n3, control, args.size_influence, x_train, y_train, optim, opt_state
             )
-            # logger.info(
-            #     f"epoch: {epoch_list[-1]}, train_loss: {train_losses[-1]:.4e}, test_loss: {test_losses[-1]:.4e}, test_accuracy: {test_accuracies[-1]:.4f}"
-            # )
-            # logger.info(
-            #     f"control2: {controls[-1]:.4e}, Control_grad_norm: {control_grad_norms[-1]:.4e}"
-            # )
 
-            metrics = {
-                "train/loss": float(train_loss),
-                "test/loss": float(test_loss),
-                "network/size": control.params.item() ** 2,
-                "learning/control_grad_norm": float(control_grad_norms[-1])
-            }
-            logger.log_metrics(metrics, epoch)
+            if epoch % args.log_every == 0:
+                epoch_list.append(epoch)
+                test_loss = test_step(n3, control, args.size_influence, x_test, y_test)
+                test_accuracy = accuracy(n3, control, x_test, y_test)
+                test_losses.append(test_loss)
+                test_accuracies.append(test_accuracy)
+                train_losses.append(train_loss)
+                controls.append(control.params.item() ** 2)
+                control_grad_norms.append(
+                    grad_norm(
+                        eqx.filter_grad(compute_size_loss)(control, args.size_influence)
+                    )
+                )
+                metrics = {
+                        "train/loss": float(train_loss),
+                        "test/loss": float(test_loss),
+                        "test/accuracy": float(test_accuracy),
+                        "network/size": control.params.item() ** 2,
+                        "learning/control_grad_norm": float(control_grad_norms[-1])
+                }
+                logger.log_metrics(metrics, epoch)
 
-    # Save metrics
-    cmat = confusion_matrix(n3, control, x_test, y_test)
+        # Save metrics
+        cmat = confusion_matrix(n3, control, x_test, y_test)
 
-    np.savetxt(f"{output_path}epochs.txt", epoch_list)
-    np.savetxt(f"{output_path}test_losses.txt", test_losses)
-    np.savetxt(f"{output_path}test_accuracies.txt", test_accuracies)
-    np.savetxt(f"{output_path}train_losses.txt", train_losses)
-    np.savetxt(f"{output_path}controls.txt", controls)
-    np.savetxt(f"{output_path}control_grad_norms.txt", control_grad_norms)
-    np.savetxt(f"{output_path}confusion_matrix.txt", cmat)
+        np.savetxt(f"{output_path}/epochs.txt", epoch_list)
+        np.savetxt(f"{output_path}/test_losses.txt", test_losses)
+        np.savetxt(f"{output_path}/test_accuracies.txt", test_accuracies)
+        np.savetxt(f"{output_path}/train_losses.txt", train_losses)
+        np.savetxt(f"{output_path}/controls.txt", controls)
+        np.savetxt(f"{output_path}/control_grad_norms.txt", control_grad_norms)
+        np.savetxt(f"{output_path}/confusion_matrix.txt", cmat)
+
+        del logger
 
 
 if __name__ == "__main__":
