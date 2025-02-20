@@ -51,21 +51,11 @@ def argument_parser():
     parser.add_argument(
         "--learning_rate", type=float, default=1e-3, help="Learning rate for optimizer"
     )
-    parser.add_argument(
-        "--out_path", type=str, default=None, help="Path to save metrics"
-    )
     parser.add_argument("--out_root", type=str, default="./output",
                     help="Root directory for all outputs")
     parser.add_argument("--exp_name", type=str, default="default",
                     help="Experiment name for organizing results")
     parser.add_argument("--log_every", type=int, default=100, help="log every n epochs")
-    parser.add_argument(
-        "--verbosity",
-        type=str,
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        default="INFO",
-        help="Set the logging verbosity",
-    )
     parser.add_argument("--wandb", action="store_true",
                     help="Enable Weights & Biases logging")
     parser.add_argument("--group", type=str, default=None,
@@ -164,16 +154,6 @@ def main():
         enable=args.wandb
     )
 
-    # logging.basicConfig(
-    #     level=getattr(logging, args.verbosity),
-    #     filename=f"{output_path}/info.log",
-    #     filemode="w",
-    # )
-    # logger = logging.getLogger(__name__)
-    # if args.console:
-    #     console_handler = logging.StreamHandler(sys.stdout)
-    #     logger.addHandler(console_handler)
-
     # Dataset
     x_train, x_test, y_train, y_test = bessel.generate_data(
         n_samples=args.n_samples,
@@ -214,10 +194,6 @@ def main():
                     eqx.filter_grad(compute_size_loss)(control, args.size_influence)
                 )
             )
-            # logger.info(
-            #     f"epoch: {epoch_list[-1]}, train_loss: {train_losses[-1]:.4e}, test_loss: {test_losses[-1]:.4e} control: {controls[-1]:.4e}"
-            # )
-            # logger.info(f"Control_grad_norm: {control_grad_norms[-1]:.4e}")
 
             metrics = {
                 "train/loss": float(train_loss),
