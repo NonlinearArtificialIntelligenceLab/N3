@@ -1,18 +1,18 @@
 bessel_regression:
-  epochs: 20000
+  epochs: 5000
   num_runs: 10
   base_seed: 0
   method: grid
   parameters:
     N_max:
-      values: [64, 128, 256, 512, 1024]
+      values: [4, 8, 16, 32, 64, 128, 256, 512, 1024]
     n_samples:
-      values: [1000, 10000, 100000]
+      values: [100000]
     learning_rate:
       values: [1e-4, 3e-4, 1e-3]
 
 spiral_classification:
-  epochs: 20000
+  epochs: 5000
   num_runs: 10
   base_seed: 0
   method: grid
@@ -25,20 +25,20 @@ spiral_classification:
       values: [1e-4, 3e-4, 1e-3]
 
 bessel_regression_baseline:
-  epochs: 20000
+  epochs: 5000
   num_runs: 10
   base_seed: 0
   method: grid
   parameters:
     N_max:
-      values: [64, 128, 256, 512, 1024]
+      values: [4, 8, 16, 32, 64, 128, 256, 512, 1024]
     n_samples:
-      values: [1000, 10000, 100000]
+      values: [100000]
     learning_rate:
       values: [1e-4, 3e-4, 1e-3]
 
 spiral_classification_baseline:
-  epochs: 20000
+  epochs: 5000
   num_runs: 10
   base_seed: 0
   method: grid
