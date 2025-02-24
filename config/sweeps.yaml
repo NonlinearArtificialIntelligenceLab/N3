@@ -7,7 +7,7 @@ bessel_regression:
     N_max:
       values: [4, 8, 16, 32, 64, 128, 256, 512, 1024]
     n_samples:
-      values: [100000]
+      values: [32768]
     learning_rate:
       values: [1e-4, 3e-4, 1e-3]
 
@@ -20,7 +20,7 @@ spiral_classification:
     n_classes:
       values: [3, 5, 7, 9]
     N_max:
-      values: [64, 128, 256, 512, 1024]
+      values: [4, 8, 16, 32, 64, 128, 256, 512, 1024]
     learning_rate:
       values: [1e-4, 3e-4, 1e-3]
 
@@ -33,7 +33,7 @@ bessel_regression_baseline:
     N_max:
       values: [4, 8, 16, 32, 64, 128, 256, 512, 1024]
     n_samples:
-      values: [100000]
+      values: [32768]
     learning_rate:
       values: [1e-4, 3e-4, 1e-3]
 
@@ -46,6 +46,6 @@ spiral_classification_baseline:
     n_classes:
       values: [3, 5, 7, 9]
     N_max:
-      values: [64, 128, 256, 512, 1024]
+      values: [4, 8, 16, 32, 64, 128, 256, 512, 1024]
     learning_rate:
       values: [1e-4, 3e-4, 1e-3]
