@@ -25,6 +25,10 @@ def get_script_path(sweep_name):
             return "benchmarking/bessel_static.py"
         case "spiral_classification_baseline":
             return "benchmarking/spiral_static.py"
+        case "gaussian_regression":
+            return "benchmarking/gaussian_standard.py"
+        case "gaussian_regression_baseline":
+            return "benchmarking/gaussian_static.py"
         case _:
             raise ValueError(f"Unknown sweep name: {sweep_name}")
 

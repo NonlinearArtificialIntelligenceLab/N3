@@ -30,6 +30,11 @@ richtext = [
     "ipywidgets>=8.1.5",
     "tqdm>=4.66.5",
 ]
+benchmarking = [
+    "dysts>=0.95",
+    "numba>=0.61.0",
+    "sdeint>=0.3.0",
+]
 
 [tool.ruff.lint]
 # syntax error in forward annotation broken by jaxtyping
