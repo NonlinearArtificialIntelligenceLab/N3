@@ -71,7 +71,7 @@ def run_sweep(sweep_name, max_parallel=4):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("sweep_name", choices=["bessel_regression", "spiral_classification", "bessel_regression_baseline", "spiral_classification_baseline"])
+    parser.add_argument("sweep_name", choices=["bessel_regression", "spiral_classification", "bessel_regression_baseline", "spiral_classification_baseline", "gaussian_regression", "gaussian_regression_baseline"])
     parser.add_argument("--max_parallel", type=int, default=4)
     args = parser.parse_args()
 

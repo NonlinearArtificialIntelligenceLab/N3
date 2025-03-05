@@ -5,11 +5,11 @@ bessel_regression:
   method: grid
   parameters:
     N_max:
-      values: [2, 4, 6, 8, 11, 16, 23, 32, 45, 64, 91, 128, 181, 256, 363, 512, 724, 1024]
+      values: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 26, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97, 107, 117, 129, 142, 156, 172, 189, 208, 229, 252, 277, 304, 335, 368, 405, 446, 490, 539, 593, 653, 718, 790, 869, 956]
     n_samples:
       values: [32768]
     learning_rate:
-      values: [1e-4, 3e-4, 5e-4, 6e-4, 1e-3, 0.01, 0.1]
+      values: [1e-4, 2e-4, 3e-4, 5e-4, 6e-4, 1e-3, 0.01, 0.1]
 
 bessel_regression_baseline:
   epochs: 5000
@@ -18,11 +18,11 @@ bessel_regression_baseline:
   method: grid
   parameters:
     N_max:
-      values: [2, 4, 6, 8, 11, 16, 23, 32, 45, 64, 91, 128, 181, 256, 363, 512, 724, 1024]
+      values: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 26, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97, 107, 117, 129, 142, 156, 172, 189, 208, 229, 252, 277, 304, 335, 368, 405, 446, 490, 539, 593, 653, 718, 790, 869, 956]
     n_samples:
       values: [32768]
     learning_rate:
-      values: [1e-4, 3e-4, 5e-4, 6e-4, 1e-3, 0.01, 0.1]
+      values: [1e-4, 2e-4, 3e-4, 5e-4, 6e-4, 1e-3, 0.01, 0.1]
 
 gaussian_regression:
   epochs: 100_000
@@ -35,7 +35,7 @@ gaussian_regression:
     n_samples:
       values: [32768]
     noise_level:
-      values: [0.01]
+      values: [0.01, 0.1, 0.5]
     learning_rate:
       values: [1e-4, 3e-4, 5e-4, 6e-4, 1e-3, 0.01, 0.1]
 
@@ -50,7 +50,7 @@ gaussian_regression_baseline:
     n_samples:
       values: [32768]
     noise_level:
-      values: [0.01]
+      values: [0.01, 0.1, 0.5]
     learning_rate:
       values: [1e-4, 3e-4, 5e-4, 6e-4, 1e-3, 0.01, 0.1]
 
@@ -77,5 +77,31 @@ spiral_classification_baseline:
       values: [3, 5, 7, 9]
     N_max:
       values: [4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    learning_rate:
+      values: [1e-4, 3e-4, 1e-3]
+
+mnist1d_classification:
+  epochs: 5000
+  num_runs: 10
+  base_seed: 0
+  method: grid
+  parameters:
+    N_max:
+      values: [4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    n_samples:
+      values: [32768]
+    learning_rate:
+      values: [1e-4, 3e-4, 1e-3]
+
+mnist1d_classification_baseline:
+  epochs: 5000
+  num_runs: 10
+  base_seed: 0
+  method: grid
+  parameters:
+    N_max:
+      values: [4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    n_samples:
+      values: [32768]
     learning_rate:
       values: [1e-4, 3e-4, 1e-3]

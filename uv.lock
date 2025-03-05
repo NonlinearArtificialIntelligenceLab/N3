@@ -1137,6 +1137,21 @@ wheels = [
 ]
 
 [[package]]
+name = "mnist1d"
+version = "0.0.2.post1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "requests" },
+    { name = "scipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/69/34/b8551150c824b4738528bf82edb99a35d81c529c68a2e7e2cbe08b31b1ac/mnist1d-0.0.2.post1.tar.gz", hash = "sha256:e806fcefc9606b3d3a331c2db608740719f326e642b7606407a97488c7bdc13a", size = 280248 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d0/22/3ffa6072425bab0c4b0e90667837df787a389626e3397dc0aafb986acdb4/mnist1d-0.0.2.post1-py3-none-any.whl", hash = "sha256:e780fadc12ab6e45994dcb02bbe728b347243e0a5d13790f2a86992500eceb86", size = 14369 },
+]
+
+[[package]]
 name = "n3"
 version = "0.1.0"
 source = { virtual = "." }
@@ -1146,6 +1161,7 @@ dependencies = [
     { name = "ipykernel" },
     { name = "jax", extra = ["cuda12"] },
     { name = "jaxtyping" },
+    { name = "mnist1d" },
     { name = "optax" },
     { name = "scikit-learn" },
     { name = "scipy" },
@@ -1185,6 +1201,7 @@ requires-dist = [
     { name = "jupyter", marker = "extra == 'notebook'", specifier = ">=1.1.1" },
     { name = "jupyterlab", marker = "extra == 'notebook'", specifier = ">=4.2.5" },
     { name = "matplotlib", marker = "extra == 'plotting'", specifier = ">=3.9.2" },
+    { name = "mnist1d", specifier = ">=0.0.2.post1" },
     { name = "numba", marker = "extra == 'benchmarking'", specifier = ">=0.61.0" },
     { name = "optax", specifier = ">=0.2.3" },
     { name = "scikit-learn", specifier = ">=1.5.2" },
