@@ -7,11 +7,14 @@ requires-python = ">=3.12"
 dependencies = [
     "beartype>=0.18.5",
     "equinox>=0.11.7",
+    "ipykernel>=6.29.5",
     "jax[cuda12]>=0.4.33",
     "jaxtyping>=0.2.34",
+    "mnist1d>=0.0.2.post1",
     "optax>=0.2.3",
     "scikit-learn>=1.5.2",
     "scipy>=1.14.1",
+    "wandb>=0.19.6",
 ]
 
 [project.optional-dependencies]
@@ -27,6 +30,11 @@ notebook = [
 richtext = [
     "ipywidgets>=8.1.5",
     "tqdm>=4.66.5",
+]
+benchmarking = [
+    "dysts>=0.95",
+    "numba>=0.61.0",
+    "sdeint>=0.3.0",
 ]
 
 [tool.ruff.lint]

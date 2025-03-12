@@ -1,0 +1,9 @@
+default:
+  project: "growing-networks"
+  tags: ["regression", "growth"]
+  notes: "Default configuration for regression tasks"
+
+classification:
+  extends: default
+  tags: ["classification"]
+  notes: "Configuration for classification tasks"
