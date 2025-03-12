@@ -42,6 +42,8 @@ The analysis of the statistical run results can be done using the `analysis` not
 
 The mathematica notebooks used for this work can be accessed in the `mathematica` directory.
 
+For running grid searches and sweeps, the `config/sweeps.yaml` config file can be edited accordingly and run with `scripts/run_sweep.py`
+
 ### Code References
 - [Equinox](https://docs.kidger.site/equinox/) Pytorch like module for JAX
 - [JAX](https://github.com/jax-ml/jax) Accelerator-oriented array computation and program transformation
